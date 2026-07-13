@@ -12,12 +12,18 @@ import {
   ArrowRight,
 } from 'lucide-react'
 import { useAuth } from '../context/AuthContext.jsx'
+import InstallAppBanner from '../components/InstallAppBanner.jsx'
 
 const quickLinks = [
   { icon: BookOpen, title: 'Notes & Resources', description: 'Browse, search, and upload study material.', to: '/notes' },
   { icon: Bookmark, title: 'Bookmarks', description: 'Everything you\u2019ve saved for later.', to: '/bookmarks' },
   { icon: Bot, title: 'AI Study Assistant', description: 'Ask questions about your notes.', comingSoon: true },
-  { icon: FileQuestion, title: 'AI Quiz Generator', description: 'Turn any resource into a quiz.', comingSoon: true },
+  {
+    icon: FileQuestion,
+    title: 'AI Quiz Generator',
+    description: 'Open any resource to generate a quiz from it.',
+    to: '/notes',
+  },
 ]
 
 export default function Dashboard() {
@@ -56,6 +62,10 @@ export default function Dashboard() {
             Here&rsquo;s where you left off.
           </p>
         </motion.div>
+
+        <div className="mt-8">
+          <InstallAppBanner />
+        </div>
 
         <motion.div
           initial={{ opacity: 0, y: 16 }}

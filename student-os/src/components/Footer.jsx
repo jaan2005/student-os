@@ -1,4 +1,5 @@
-import { Layers, Twitter, Github, Linkedin } from 'lucide-react'
+import { Twitter, Github, Linkedin } from 'lucide-react'
+import Logo from './Logo.jsx'
 
 const links = {
   Product: [
@@ -20,7 +21,7 @@ export default function Footer() {
           <div className="lg:col-span-2">
             <a href="#top" className="inline-flex items-center gap-2">
               <span className="w-8 h-8 rounded-lg bg-primary/15 border border-primary/30 flex items-center justify-center">
-                <Layers size={16} className="text-primary-light" />
+                <Logo size={16} className="text-primary-light" />
               </span>
               <span className="font-display text-[15px] font-semibold tracking-tight text-ink">
                 Student<span className="text-primary-light">OS</span>

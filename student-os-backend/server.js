@@ -10,6 +10,7 @@ import resourceRoutes from './src/routes/resourceRoutes.js'
 import subjectRoutes from './src/routes/subjectRoutes.js'
 import bookmarkRoutes from './src/routes/bookmarkRoutes.js'
 import adminRoutes from './src/routes/adminRoutes.js'
+import aiRoutes from './src/routes/aiRoutes.js'
 import { notFound, errorHandler } from './src/middleware/errorHandler.js'
 
 const app = express()
@@ -37,6 +38,7 @@ app.use('/api/resources', resourceRoutes)
 app.use('/api/subjects', subjectRoutes)
 app.use('/api/bookmarks', bookmarkRoutes)
 app.use('/api/admin', adminRoutes)
+app.use('/api/ai', aiRoutes)
 
 app.use(notFound)
 app.use(errorHandler)

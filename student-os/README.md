@@ -78,3 +78,54 @@ src/
 - Nav links (`Features`, `Roadmap`, `About`) scroll to in-page sections via anchors.
 - Respects `prefers-reduced-motion`; all interactive elements have visible focus states.
 - No external image assets are used anywhere — mockups and illustrations are built entirely from CSS/markup to avoid any copyright concerns.
+
+## Logo
+
+`src/components/Logo.jsx` — a custom SVG mark (a simplified browser/app-window
+frame, a literal nod to the "OS" in the name), built to the same visual spec
+as the Lucide icons it replaced (24x24 viewBox, `strokeWidth: 2`, round caps)
+so it drops into the same `size`/`className` prop API everywhere the old
+`Layers` icon was used: `Navbar`, `Sidebar`, `AuthShell`, `Footer`.
+
+`public/logo-mark.svg` is a separate, self-contained version (dark navy
+background baked in) used for the favicon and PWA icons — the in-app
+`Logo.jsx` is just the glyph and relies on whatever colored container it's
+placed in, which doesn't work for a favicon/home-screen icon that needs to
+render on an arbitrary background.
+
+## Install as an app (PWA)
+
+`public/manifest.webmanifest` + `public/sw.js` (registered in `main.jsx`)
+make the app installable on Android/Chrome (a real "Install" prompt) and
+addable-to-home-screen on iOS Safari (manual, via Share menu — Apple doesn't
+allow a programmatic prompt there). `src/hooks/useInstallPrompt.js` handles
+both cases; `InstallAppButton.jsx` (Navbar) and `InstallAppBanner.jsx`
+(Dashboard, dismissible) are the two surfaced entry points.
+
+The service worker (`public/sw.js`) is **deliberately a no-caching
+pass-through** — just enough to satisfy Chrome's installability requirement
+(a fetch handler must exist), without caching anything. That's intentional:
+a caching service worker during an actively-updating launch week can easily
+serve students a stale, already-fixed version of the app after a deploy.
+Real offline support is a reasonable thing to add later, once the release
+cadence has slowed down.
+
+**One manual step needed for full compatibility — this repo doesn't include
+it because there's no image-rasterization tool in the environment this was
+built in:** the manifest and `index.html` reference three PNG files that
+don't exist yet:
+```
+public/icons/icon-192.png          (192x192)
+public/icons/icon-512.png          (512x512)
+public/icons/icon-maskable-512.png (512x512, with safe-zone padding for Android's adaptive icon shapes)
+public/icons/apple-touch-icon.png  (180x180, for iOS home screen)
+```
+Until these exist, install still works today on Android/Chrome (it falls
+back to `public/logo-mark.svg`, which Chrome supports directly in the
+manifest), but iOS's home-screen icon and Android's "maskable" adaptive-icon
+variant won't look right without real PNGs. Fastest fix: upload
+`public/logo-mark.svg` to a free tool like
+[realfavicongenerator.net](https://realfavicongenerator.net) or
+[maskable.app](https://maskable.app), download the generated PNGs, and drop
+them into `public/icons/` with the exact filenames above — no code changes
+needed once they're in place.

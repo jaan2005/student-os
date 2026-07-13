@@ -115,6 +115,12 @@ export function AuthProvider({ children }) {
     return data.user
   }, [])
 
+  // Called by AI panels after a successful Explain/Summarize/Quiz call so
+  // the displayed credit count updates instantly, without a full re-fetch.
+  const updateCredits = useCallback((remaining) => {
+    setUser((u) => (u ? { ...u, dailyCredits: remaining } : u))
+  }, [])
+
   const value = {
     firebaseUser,
     user,
@@ -126,6 +132,7 @@ export function AuthProvider({ children }) {
     logout,
     refreshUser,
     saveProfile,
+    updateCredits,
   }
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

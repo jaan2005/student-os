@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { Layers } from 'lucide-react'
+import Logo from '../Logo.jsx'
 
 /**
  * Two-column shell shared by Signup and Login: a branded glow/grid panel on
@@ -17,7 +17,7 @@ export default function AuthShell({ eyebrow, title, subtitle, children }) {
       <div className="relative hidden lg:flex lg:w-1/2 flex-col justify-between p-12 border-r border-white/[0.06]">
         <Link to="/" className="flex items-center gap-2 group w-fit">
           <span className="w-8 h-8 rounded-lg bg-primary/15 border border-primary/30 flex items-center justify-center group-hover:border-primary/60 transition-colors">
-            <Layers size={16} className="text-primary-light" />
+            <Logo size={16} className="text-primary-light" />
           </span>
           <span className="font-display text-[15px] font-semibold tracking-tight text-ink">
             Student<span className="text-primary-light">OS</span>
@@ -49,7 +49,7 @@ export default function AuthShell({ eyebrow, title, subtitle, children }) {
           className="lg:hidden absolute top-6 left-6 flex items-center gap-2 group w-fit"
         >
           <span className="w-8 h-8 rounded-lg bg-primary/15 border border-primary/30 flex items-center justify-center">
-            <Layers size={16} className="text-primary-light" />
+            <Logo size={16} className="text-primary-light" />
           </span>
           <span className="font-display text-[15px] font-semibold tracking-tight text-ink">
             Student<span className="text-primary-light">OS</span>

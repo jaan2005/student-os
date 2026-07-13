@@ -8,6 +8,8 @@ import { uploadBufferToCloudinary } from '../utils/uploadBufferToCloudinary.js'
 import { sanitizeResource, getBookmarkedIdSet } from '../utils/resourceHelpers.js'
 import ensureMonthlyUploadWindow from '../utils/monthlyUploads.js'
 import getCloudinaryResourceType from '../utils/cloudinaryResourceType.js'
+import aiPregenQueue from '../utils/aiPregenQueue.js'
+import pregenerateResourceAI from '../utils/pregenerateResourceAI.js'
 
 const SORT_MAP = {
   newest: { createdAt: -1 },
@@ -174,6 +176,10 @@ export async function uploadResource(req, res) {
       cloudinaryUrl: uploadResult.secure_url,
       cloudinaryPublicId: uploadResult.public_id,
       uploadedBy: req.user._id,
+      // Only PDFs get Summary/Quiz pre-generated (see extractResourceText.js
+      // for why) — everything else is marked unsupported immediately rather
+      // than sitting at "pending" forever.
+      aiPregenStatus: resourceType === 'pdf' ? 'pending' : 'unsupported',
     })
   } catch (err) {
     if (err.code === 11000) {
@@ -191,6 +197,13 @@ export async function uploadResource(req, res) {
 
   await resource.populate('uploadedBy', 'firstName lastName')
   res.status(201).json({ status: 'success', resource: sanitizeResource(resource) })
+
+  // Fire-and-forget, queued (not run inline) so several uploads in quick
+  // succession don't each fire a Gemini call simultaneously. Runs AFTER the
+  // response above — the uploader never waits on this.
+  if (resourceType === 'pdf') {
+    aiPregenQueue.push(() => pregenerateResourceAI(resource._id))
+  }
 }
 
 /**

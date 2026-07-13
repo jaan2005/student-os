@@ -8,10 +8,10 @@ import {
   User,
   Settings,
   LogOut,
-  Layers,
   Shield,
   X,
 } from 'lucide-react'
+import Logo from './Logo.jsx'
 import { useAuth } from '../context/AuthContext.jsx'
 import { ROLES, ROLE_LABELS } from '../constants/roles.js'
 
@@ -50,7 +50,7 @@ function SidebarContent({ onNavigate }) {
     <div className="flex flex-col h-full">
       <div className="flex items-center gap-2 px-6 h-16 border-b border-white/[0.06] shrink-0">
         <span className="w-8 h-8 rounded-lg bg-primary/15 border border-primary/30 flex items-center justify-center">
-          <Layers size={16} className="text-primary-light" />
+          <Logo size={16} className="text-primary-light" />
         </span>
         <span className="font-display text-[15px] font-semibold tracking-tight text-ink">
           Student<span className="text-primary-light">OS</span>

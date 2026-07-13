@@ -10,13 +10,17 @@ import {
   Share2,
   Trash2,
   Check,
-  Sparkles,
+  Lightbulb,
+  FileText,
   FileQuestion,
-  MessageSquareText,
   Layers as FlashcardsIcon,
   Loader2,
 } from 'lucide-react'
 import PDFViewer from '../components/PDFViewer.jsx'
+import ExplainPanel from '../components/ai/ExplainPanel.jsx'
+import SummarizePanel from '../components/ai/SummarizePanel.jsx'
+import QuizPanel from '../components/ai/QuizPanel.jsx'
+import AICreditsBadge from '../components/ai/AICreditsBadge.jsx'
 import { useAuth } from '../context/AuthContext.jsx'
 import {
   fetchResourceById,
@@ -27,13 +31,6 @@ import {
 import { getFileTypeMeta, formatFileSize, formatDate } from '../lib/format.js'
 import { buildInlinePreviewUrl } from '../lib/previewUrl.js'
 import { recordResourceView } from '../lib/recentlyViewed.js'
-
-const COMING_SOON_ACTIONS = [
-  { label: 'Generate Quiz', icon: FileQuestion },
-  { label: 'Ask AI', icon: MessageSquareText },
-  { label: 'Summarize', icon: Sparkles },
-  { label: 'Flashcards', icon: FlashcardsIcon },
-]
 
 export default function ResourcePage() {
   const { id } = useParams()
@@ -47,6 +44,9 @@ export default function ResourcePage() {
   const [shareCopied, setShareCopied] = useState(false)
   const [deleting, setDeleting] = useState(false)
   const [bookmarkBusy, setBookmarkBusy] = useState(false)
+  const [explainOpen, setExplainOpen] = useState(false)
+  const [summarizeOpen, setSummarizeOpen] = useState(false)
+  const [quizOpen, setQuizOpen] = useState(false)
 
   useEffect(() => {
     let cancelled = false
@@ -247,25 +247,42 @@ export default function ResourcePage() {
           </div>
 
           <div className="pt-4 border-t border-white/[0.06]">
-            <p className="eyebrow text-[10px] text-ink-faint mb-3">STUDY TOOLS</p>
+            <div className="flex items-center justify-between mb-3">
+              <p className="eyebrow text-[10px] text-ink-faint">STUDY TOOLS</p>
+              <AICreditsBadge credits={user?.dailyCredits ?? 0} limit={user?.dailyCreditsLimit ?? 10} />
+            </div>
             <div className="grid grid-cols-2 gap-2.5">
-              {COMING_SOON_ACTIONS.map((action) => (
-                <div
-                  key={action.label}
-                  className="relative flex items-center gap-2 rounded-lg border border-white/[0.07] bg-white/[0.02] px-3 py-2.5 text-ink-faint cursor-not-allowed"
-                  title="Coming soon"
-                >
-                  <action.icon size={15} />
-                  <span className="text-xs">{action.label}</span>
-                  <span className="absolute -top-1.5 -right-1.5 eyebrow text-[8px] bg-base-card border border-white/[0.1] text-ink-faint px-1.5 py-0.5 rounded-full">
-                    SOON
-                  </span>
-                </div>
-              ))}
+              <StudyToolButton icon={Lightbulb} label="Explain Topic" onClick={() => setExplainOpen(true)} />
+              <StudyToolButton icon={FileText} label="Summarize PDF" onClick={() => setSummarizeOpen(true)} />
+              <StudyToolButton icon={FileQuestion} label="Generate Quiz" onClick={() => setQuizOpen(true)} />
+              <div
+                className="relative flex items-center gap-2 rounded-lg border border-white/[0.07] bg-white/[0.02] px-3 py-2.5 text-ink-faint cursor-not-allowed"
+                title="Coming soon"
+              >
+                <FlashcardsIcon size={15} />
+                <span className="text-xs">Flashcards</span>
+                <span className="absolute -top-1.5 -right-1.5 eyebrow text-[8px] bg-base-card border border-white/[0.1] text-ink-faint px-1.5 py-0.5 rounded-full">
+                  SOON
+                </span>
+              </div>
             </div>
           </div>
         </motion.aside>
       </div>
+
+      <ExplainPanel open={explainOpen} onClose={() => setExplainOpen(false)} resourceId={resource.id} />
+      <SummarizePanel
+        open={summarizeOpen}
+        onClose={() => setSummarizeOpen(false)}
+        resourceId={resource.id}
+        resourceType={resource.resourceType}
+      />
+      <QuizPanel
+        open={quizOpen}
+        onClose={() => setQuizOpen(false)}
+        resourceId={resource.id}
+        resourceType={resource.resourceType}
+      />
     </div>
   )
 }
@@ -296,6 +313,18 @@ function ActionButton({ onClick, icon: Icon, label, primary, active, danger, dis
     >
       <Icon size={14} fill={filled ? 'currentColor' : 'none'} />
       {label}
+    </button>
+  )
+}
+
+function StudyToolButton({ icon: Icon, label, onClick }) {
+  return (
+    <button
+      onClick={onClick}
+      className="flex items-center gap-2 rounded-lg border border-white/[0.08] bg-white/[0.02] hover:border-primary/25 hover:bg-primary/[0.06] transition-colors px-3 py-2.5 text-ink-muted hover:text-ink-muted"
+    >
+      <Icon size={15} className="text-primary-light shrink-0" />
+      <span className="text-xs">{label}</span>
     </button>
   )
 }

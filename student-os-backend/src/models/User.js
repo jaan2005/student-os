@@ -1,5 +1,5 @@
 import mongoose from 'mongoose'
-import { ALL_ROLES, ROLES } from '../config/constants.js'
+import { ALL_ROLES, ROLES, DAILY_AI_CREDITS } from '../config/constants.js'
 
 const userSchema = new mongoose.Schema(
   {
@@ -35,6 +35,12 @@ const userSchema = new mongoose.Schema(
     // fileHash) never increment this.
     monthlyUploadCount: { type: Number, default: 0 },
     uploadResetDate: { type: Date, default: Date.now },
+
+    // Resets to DAILY_AI_CREDITS whenever lastCreditReset falls on a
+    // previous calendar day — see utils/dailyCredits.js. Shared across
+    // Explain / Summarize / Quiz (and future AI features).
+    dailyCredits: { type: Number, default: DAILY_AI_CREDITS },
+    lastCreditReset: { type: Date, default: Date.now },
   },
   { timestamps: true }
 )

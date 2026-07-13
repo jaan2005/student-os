@@ -11,3 +11,13 @@ ReactDOM.createRoot(document.getElementById('root')).render(
     </BrowserRouter>
   </React.StrictMode>
 )
+
+// Required for Chrome/Android to consider the app installable — see
+// public/sw.js for why it's deliberately a no-caching pass-through.
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js').catch((err) => {
+      console.error('[sw] registration failed:', err)
+    })
+  })
+}

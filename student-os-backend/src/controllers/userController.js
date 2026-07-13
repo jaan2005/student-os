@@ -1,5 +1,7 @@
 import sanitizeUser from '../utils/sanitizeUser.js'
 import ensureMonthlyUploadWindow from '../utils/monthlyUploads.js'
+import ensureDailyCreditWindow from '../utils/dailyCredits.js'
+import { ALLOWED_COLLEGES } from '../config/constants.js'
 
 const REQUIRED_FIELDS = ['firstName', 'lastName', 'college', 'branch', 'semester']
 
@@ -10,6 +12,7 @@ const REQUIRED_FIELDS = ['firstName', 'lastName', 'college', 'branch', 'semester
  */
 export async function getMe(req, res) {
   await ensureMonthlyUploadWindow(req.user)
+  await ensureDailyCreditWindow(req.user)
   res.status(200).json({ user: sanitizeUser(req.user) })
 }
 
@@ -23,6 +26,14 @@ export async function updateProfile(req, res) {
   const missing = REQUIRED_FIELDS.filter((field) => !req.body[field]?.toString().trim())
   if (missing.length) {
     return res.status(400).json({ message: `Missing required field(s): ${missing.join(', ')}` })
+  }
+
+  // Validated against the same allowlist the frontend dropdown offers — not
+  // just trusted from the request body, so a direct API call can't set an
+  // unrecognized college. Keeps college data clean from day one, which
+  // matters once resources get college-scoped later (see ALLOWED_COLLEGES).
+  if (!ALLOWED_COLLEGES.includes(college.trim())) {
+    return res.status(400).json({ message: 'Select a valid college from the list.' })
   }
 
   const user = req.user

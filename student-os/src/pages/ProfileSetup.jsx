@@ -4,6 +4,7 @@ import { motion } from 'framer-motion'
 import { User, GraduationCap, Building2, CalendarDays } from 'lucide-react'
 import { useAuth } from '../context/AuthContext.jsx'
 import { getAuthErrorMessage } from '../lib/authErrors.js'
+import { COLLEGES } from '../constants/colleges.js'
 import FormField from '../components/auth/FormField.jsx'
 import ErrorBanner from '../components/auth/ErrorBanner.jsx'
 import SubmitButton from '../components/auth/SubmitButton.jsx'
@@ -107,17 +108,37 @@ export default function ProfileSetup() {
               />
             </div>
 
-            <FormField
-              id="college"
-              name="college"
-              label="College"
-              icon={Building2}
-              placeholder="e.g. Delhi University"
-              autoComplete="organization"
-              value={form.college}
-              onChange={onChange}
-              error={fieldErrors.college}
-            />
+            <div>
+              <label htmlFor="college" className="block text-xs font-medium text-ink-muted mb-1.5">
+                College
+              </label>
+              <div className="relative">
+                <Building2
+                  size={16}
+                  className="absolute left-3.5 top-1/2 -translate-y-1/2 text-ink-faint pointer-events-none"
+                />
+                <select
+                  id="college"
+                  name="college"
+                  value={form.college}
+                  onChange={onChange}
+                  aria-invalid={Boolean(fieldErrors.college)}
+                  className={`w-full appearance-none rounded-lg bg-white/[0.03] border ${
+                    fieldErrors.college ? 'border-red-500/50' : 'border-white/10'
+                  } pl-10 pr-3.5 py-2.5 text-sm text-ink outline-none focus:border-primary/60 focus:bg-white/[0.05] transition-colors`}
+                >
+                  <option value="" disabled className="bg-base-card">
+                    Select college
+                  </option>
+                  {COLLEGES.map((college) => (
+                    <option key={college} value={college} className="bg-base-card">
+                      {college}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              {fieldErrors.college && <p className="mt-1.5 text-xs text-red-400">{fieldErrors.college}</p>}
+            </div>
 
             <div className="grid sm:grid-cols-2 gap-4">
               <FormField

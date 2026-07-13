@@ -29,6 +29,30 @@ const resourceSchema = new mongoose.Schema(
 
     downloads: { type: Number, default: 0 },
     bookmarks: { type: Number, default: 0 }, // cached count; source of truth is the Bookmark collection
+
+    // Cached plain-text extraction of the file, used by AI Summarize and
+    // AI Quiz (entire-PDF mode) so the file isn't re-fetched and re-parsed
+    // on every request. `select: false` keeps it out of normal resource
+    // queries/responses — only pulled in explicitly via .select('+extractedText')
+    // in the AI controller. Populated lazily on first use, PDF only in V1
+    // (see utils/extractResourceText.js).
+    extractedText: { type: String, select: false, default: '' },
+
+    // Pre-generated AI Summary and whole-PDF Quiz, produced automatically in
+    // the background right after a PDF upload (see utils/pregenerateResourceAI.js).
+    // Serving these is then a plain MongoDB read with no Gemini call on the
+    // request path — the whole point being that 100+ students opening the
+    // same file during exam week never all hit the AI provider at once.
+    // `select: false` for the same reason as extractedText; only pulled in
+    // via .select('+aiSummaryCache'/'+aiQuizCache') where actually needed.
+    aiPregenStatus: {
+      type: String,
+      enum: ['pending', 'ready', 'unsupported', 'failed'],
+      default: 'pending',
+    },
+    aiSummaryCache: { type: mongoose.Schema.Types.Mixed, default: null, select: false },
+    aiQuizCache: { type: mongoose.Schema.Types.Mixed, default: null, select: false },
+    aiPregenAt: { type: Date, default: null },
   },
   { timestamps: true }
 )

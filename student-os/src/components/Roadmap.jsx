@@ -4,12 +4,12 @@ import { CheckCircle2, CircleDot, Circle } from 'lucide-react'
 const roadmap = [
   { n: '01', title: 'Secure Authentication', status: 'shipped' },
   { n: '02', title: 'Student Profile', status: 'shipped' },
-  { n: '03', title: 'Personalized Dashboard', status: 'in-progress' },
-  { n: '04', title: 'Notes Sharing', status: 'in-progress' },
-  { n: '05', title: 'Subject Organization', status: 'planned' },
-  { n: '06', title: 'AI Assistant', status: 'planned' },
-  { n: '07', title: 'AI Quiz Generator', status: 'planned' },
-  { n: '08', title: 'Bookmark Notes', status: 'planned' },
+  { n: '03', title: 'Personalized Dashboard', status: 'shipped' },
+  { n: '04', title: 'Notes Sharing', status: 'shipped' },
+  { n: '05', title: 'Subject Organization', status: 'shipped' },
+  { n: '06', title: 'AI Assistant', status: 'in-progress' },
+  { n: '07', title: 'AI Quiz Generator', status: 'shipped' },
+  { n: '08', title: 'Bookmark Notes', status: 'shipped' },
 ]
 
 const statusMeta = {

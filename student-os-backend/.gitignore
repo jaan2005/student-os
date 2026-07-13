@@ -1,13 +1,3 @@
-# Dependencies
-node_modules/
-
-# Environment variables
+node_modules
 .env
-.env.*
-
-# Build
-dist/
-build/
-
-# Logs
 *.log
