@@ -212,11 +212,25 @@ This matters for two reasons:
 3. **It defaults delivery to `Content-Disposition: attachment`**, which means
    the browser downloads a `raw`-type file the instant anything requests its
    URL — including an `<iframe>` trying to preview it. `sanitizeResource`
-   therefore returns two URLs: `cloudinaryUrl` (unmodified, used for the
-   Download button) and `previewUrl` (same file, with `fl_attachment:false`
-   inserted via `utils/cloudinaryUrls.js`, used only by the frontend's
-   `PDFViewer`). Using the wrong one for the wrong purpose is exactly what
-   causes "clicking Open just downloads the file instead of previewing it."
+   therefore returns three URLs, each for a distinct purpose:
+   - `cloudinaryUrl` — the underlying stored asset URL. Not meant to be used
+     directly by the frontend for either previewing or downloading anymore
+     (see the two below); kept mainly as a fallback and for reference.
+   - `previewUrl` — same file, with `fl_attachment:false` inserted (see
+     `utils/cloudinaryUrls.js`), used only by the frontend's `PDFViewer` and
+     the "Preview" button. Using `cloudinaryUrl` here is exactly what causes
+     "clicking Open just downloads the file instead of previewing it."
+   - `downloadUrl` — same file, with `fl_attachment:<real filename>`
+     inserted, used only by Download buttons. Cloudinary's *default*
+     attachment behavior (i.e. what plain `cloudinaryUrl` gives you) reports
+     the filename as the raw SHA-256 `public_id` with no explicit
+     Content-Disposition filename — desktop browsers are generally forgiving
+     and infer `.pdf` from the URL path anyway, but Android's download
+     manager leans more heavily on the actual Content-Disposition header;
+     with none given, it can save the file with no recognizable name or
+     extension, which is what "it downloads but nothing can open it" on
+     mobile looks like. `fl_attachment:<filename>` makes Cloudinary set an
+     explicit, correctly-named Content-Disposition instead.
 
 ## AI Learning Module
 

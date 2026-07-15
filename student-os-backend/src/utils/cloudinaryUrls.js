@@ -6,11 +6,33 @@
  * trying to preview it. This inserts the `fl_attachment:false` delivery
  * flag into an already-known-good stored URL, producing a second URL that
  * renders inline instead.
- *
- * Downloads intentionally keep using the original, unmodified
- * `cloudinaryUrl` — that's the one place we *want* attachment behavior.
  */
 export function toInlinePreviewUrl(cloudinaryUrl) {
   if (!cloudinaryUrl) return cloudinaryUrl
   return cloudinaryUrl.replace('/upload/', '/upload/fl_attachment:false/')
+}
+
+/**
+ * Downloading the plain `cloudinaryUrl` directly relies on Cloudinary's
+ * *default* attachment behavior, which reports the filename as the raw
+ * SHA-256 `public_id` (e.g. `a3f92e...d81`) with no explicit
+ * Content-Disposition filename. Desktop browsers are generally forgiving
+ * and infer `.pdf` from the URL path anyway, but Android's download manager
+ * leans more heavily on the actual Content-Disposition header — with none
+ * given, it can save the file without a recognizable name/extension, which
+ * is what "it downloads but nothing can open it" looks like.
+ *
+ * `fl_attachment:<filename>` makes Cloudinary set an explicit
+ * Content-Disposition with a real filename (and it appends the correct
+ * extension itself, so the name passed in here should be the bare name
+ * without one). This is the URL to actually use for the Download button —
+ * `cloudinaryUrl` itself is now just the underlying stored asset URL.
+ */
+export function toDownloadUrl(cloudinaryUrl, fileName) {
+  if (!cloudinaryUrl) return cloudinaryUrl
+
+  const baseName = (fileName || 'download').replace(/\.[^./]+$/, '') // strip existing extension, if any
+  const safeName = encodeURIComponent(baseName)
+
+  return cloudinaryUrl.replace('/upload/', `/upload/fl_attachment:${safeName}/`)
 }
