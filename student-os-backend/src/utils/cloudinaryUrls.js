@@ -23,16 +23,21 @@ export function toInlinePreviewUrl(cloudinaryUrl) {
  * is what "it downloads but nothing can open it" looks like.
  *
  * `fl_attachment:<filename>` makes Cloudinary set an explicit
- * Content-Disposition with a real filename (and it appends the correct
- * extension itself, so the name passed in here should be the bare name
- * without one). This is the URL to actually use for the Download button —
- * `cloudinaryUrl` itself is now just the underlying stored asset URL.
+ * Content-Disposition with a real filename. IMPORTANT: unlike some other
+ * Cloudinary transformations, this does NOT auto-append the correct file
+ * extension if you omit it — the filename passed in here must already
+ * include the real extension (e.g. "Lecture Notes.pdf"), or the downloaded
+ * file lands with no extension at all. That was a real bug in an earlier
+ * version of this function (it stripped the extension, assuming Cloudinary
+ * would re-add it) — the visible symptom was Android receiving an
+ * extensionless file and guessing the wrong file type entirely
+ * (misidentifying it as a 3D/AR model and prompting to install "Google Play
+ * Services for AR").
  */
 export function toDownloadUrl(cloudinaryUrl, fileName) {
   if (!cloudinaryUrl) return cloudinaryUrl
 
-  const baseName = (fileName || 'download').replace(/\.[^./]+$/, '') // strip existing extension, if any
-  const safeName = encodeURIComponent(baseName)
+  const safeName = encodeURIComponent(fileName || 'download')
 
   return cloudinaryUrl.replace('/upload/', `/upload/fl_attachment:${safeName}/`)
 }
