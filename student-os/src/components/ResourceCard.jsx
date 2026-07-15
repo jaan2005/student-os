@@ -23,9 +23,9 @@ export default function ResourceCard({ resource, currentUserId, currentUserRole,
     e.stopPropagation()
     try {
       const fresh = await fetchResourceById(resource.id, { download: true })
-      window.open(fresh.cloudinaryUrl, '_blank', 'noopener,noreferrer')
+      window.open(fresh.downloadUrl || fresh.cloudinaryUrl, '_blank', 'noopener,noreferrer')
     } catch {
-      window.open(resource.cloudinaryUrl, '_blank', 'noopener,noreferrer')
+      window.open(resource.downloadUrl || resource.cloudinaryUrl, '_blank', 'noopener,noreferrer')
     }
   }
 

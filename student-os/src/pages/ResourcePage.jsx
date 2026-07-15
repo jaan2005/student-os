@@ -72,9 +72,9 @@ export default function ResourcePage() {
     try {
       const fresh = await fetchResourceById(id, { download: true })
       setResource(fresh)
-      window.open(fresh.cloudinaryUrl, '_blank', 'noopener,noreferrer')
+      window.open(fresh.downloadUrl || fresh.cloudinaryUrl, '_blank', 'noopener,noreferrer')
     } catch {
-      window.open(resource.cloudinaryUrl, '_blank', 'noopener,noreferrer')
+      window.open(resource.downloadUrl || resource.cloudinaryUrl, '_blank', 'noopener,noreferrer')
     }
   }
 

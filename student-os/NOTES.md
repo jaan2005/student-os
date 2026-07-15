@@ -68,17 +68,28 @@ single source of truth for what `resourceType` gets stored — a renamed `.exe`
 sent as `application/pdf` would still be rejected by Multer's `fileFilter`
 before it reaches the controller.
 
-**Preview and download are deliberately different URLs.** Cloudinary's `raw`
-resource type (used for PDF/DOC/PPT — see backend README for why) defaults
-delivery to `Content-Disposition: attachment`, which makes the browser
-download the file the instant anything requests that URL, including an
-`<iframe>` trying to render it inline. So every resource response includes
-both `cloudinaryUrl` (unmodified — used by the Download button) and
-`previewUrl` (same file, with `fl_attachment:false` inserted server-side —
-used only by `PDFViewer`'s `<iframe>`/`<img>`). `ResourcePage` and
-`ResourceCard` both use `cloudinaryUrl` for Download and `previewUrl` for
-anything meant to render inline; mixing the two up is exactly what causes
-"clicking Open just downloads the file instead of showing a preview."
+**Preview and download are deliberately different URLs — three, not two.**
+Cloudinary's `raw` resource type (used for PDF/DOC/PPT — see backend README
+for why) defaults delivery to `Content-Disposition: attachment`, which makes
+the browser download the file the instant anything requests that URL,
+including an `<iframe>` trying to render it inline. Every resource response
+includes:
+- `cloudinaryUrl` — the underlying stored asset URL; not used directly by
+  the frontend anymore, kept mainly as a fallback.
+- `previewUrl` — `fl_attachment:false` inserted server-side, used only by
+  `PDFViewer`'s `<iframe>`/`<img>` and the "Preview" button.
+- `downloadUrl` — `fl_attachment:<real filename>` inserted server-side, used
+  only by Download buttons. The plain `cloudinaryUrl`'s default filename is
+  the raw SHA-256 hash with no explicit Content-Disposition — desktop
+  browsers mostly infer `.pdf` from the URL anyway, but Android's download
+  manager relies more on the actual header, and without one could save the
+  file with no recognizable extension — which is what "it downloads but
+  nothing can open it" on mobile looks like.
+
+`ResourcePage` and `ResourceCard` use `previewUrl` for anything meant to
+render inline and `downloadUrl` for anything meant to save to disk; mixing
+these up is exactly what causes either "clicking Open just downloads the
+file" or "the download exists but nothing can open it."
 
 **"Study Tools" (Generate Quiz / Ask AI / Summarize / Flashcards) are
 deliberately inert in V1** — `ResourcePage`'s buttons are disabled with a

@@ -72,6 +72,18 @@ src/
 - **Accents:** `accent-violet` (`#7C5CFC`), `accent-cyan` (`#22D3EE`) — used sparingly in gradients and status indicators
 - **Type:** Space Grotesk (display/headings), Inter (body), JetBrains Mono (eyebrows, labels, roadmap numbers — a nod to the "OS" theme)
 
+## Deploying (Vercel)
+
+`vercel.json` rewrites every path to `index.html`, which is required for a
+client-side-routed app like this one. Without it, anything other than the
+exact root URL — refreshing `/dashboard`, opening a bookmarked deep link, or
+launching the installed PWA (its `start_url` is `/dashboard`, see below) —
+404s. That's because those are real HTTP requests straight to Vercel for a
+literal file at that path, which doesn't exist; only in-app navigation
+(clicking a link) is handled by React Router in the browser. The rewrite
+makes every path serve `index.html` instead, and React Router takes over
+from there once the JS loads.
+
 ## Notes
 
 - Routing: "Sign In" → `/login`, "Get Started" / "Create Free Account" → `/signup`. After auth, new users land on `/profile-setup`; returning users with a completed profile land on `/dashboard`.
