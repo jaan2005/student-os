@@ -8,6 +8,7 @@ import {
   listResources,
   uploadResource,
   getResourceById,
+  downloadResourceFile,
   updateResource,
   deleteResource,
 } from '../controllers/resourceController.js'
@@ -24,6 +25,7 @@ router.post(
   asyncHandler(uploadResource)
 )
 router.get('/:id', asyncHandler(getResourceById))
+router.get('/:id/download', asyncHandler(downloadResourceFile))
 router.put('/:id', asyncHandler(updateResource))
 router.delete('/:id', asyncHandler(deleteResource))
 

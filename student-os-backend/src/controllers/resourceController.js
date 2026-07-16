@@ -208,20 +208,55 @@ export async function uploadResource(req, res) {
 
 /**
  * GET /api/resources/:id
- * Pass ?download=true to also increment the downloads counter (used by the
- * frontend's Download button, which then opens `cloudinaryUrl` directly).
  */
 export async function getResourceById(req, res) {
   const resource = await Resource.findById(req.params.id).populate('uploadedBy', 'firstName lastName')
   if (!resource) return res.status(404).json({ message: 'Resource not found.' })
 
-  if (req.query.download === 'true') {
-    resource.downloads += 1
-    await resource.save()
-  }
-
   const bookmarkedIds = await getBookmarkedIdSet(req.user._id)
   res.status(200).json({ resource: sanitizeResource(resource, bookmarkedIds) })
+}
+
+// Inverted from ALLOWED_MIME_TYPES (middleware/upload.js) rather than
+// duplicated, so the two mappings can't drift out of sync.
+const RESOURCE_TYPE_TO_MIME = Object.fromEntries(
+  Object.entries(ALLOWED_MIME_TYPES).map(([mime, type]) => [type, mime])
+)
+
+/**
+ * GET /api/resources/:id/download
+ *
+ * Fetches the file server-side and streams it back with headers we control
+ * directly — Content-Type and a correctly-named, correctly-escaped
+ * Content-Disposition — rather than relying on a Cloudinary URL
+ * transformation to produce them. That approach (fl_attachment:<filename>)
+ * turned out to have escaping rules around filenames containing a "."
+ * that weren't reliable enough to depend on (Cloudinary returns an outright
+ * HTTP 400 for some values) — this sidesteps that entirely.
+ */
+export async function downloadResourceFile(req, res) {
+  const resource = await Resource.findById(req.params.id)
+  if (!resource) return res.status(404).json({ message: 'Resource not found.' })
+
+  const upstream = await fetch(resource.cloudinaryUrl)
+  if (!upstream.ok) {
+    return res.status(502).json({ message: 'Could not fetch the file for download. Please try again.' })
+  }
+
+  resource.downloads += 1
+  await resource.save()
+
+  const contentType = RESOURCE_TYPE_TO_MIME[resource.resourceType] || 'application/octet-stream'
+  // RFC 6266: a plain ASCII fallback (older clients) plus a UTF-8 encoded
+  // filename* (everything else) covers non-ASCII filenames correctly too.
+  const asciiFallback = resource.fileName.replace(/[^\x20-\x7E]/g, '_').replace(/"/g, "'")
+  const encodedName = encodeURIComponent(resource.fileName)
+
+  res.setHeader('Content-Type', contentType)
+  res.setHeader('Content-Disposition', `attachment; filename="${asciiFallback}"; filename*=UTF-8''${encodedName}`)
+
+  const buffer = Buffer.from(await upstream.arrayBuffer())
+  res.send(buffer)
 }
 
 const EDITABLE_FIELDS = ['title', 'description', 'semester', 'subject', 'unit', 'topic', 'tags']

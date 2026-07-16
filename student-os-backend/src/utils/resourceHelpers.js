@@ -1,5 +1,5 @@
 import Bookmark from '../models/Bookmark.js'
-import { toInlinePreviewUrl, toDownloadUrl } from './cloudinaryUrls.js'
+import { toInlinePreviewUrl } from './cloudinaryUrls.js'
 
 /**
  * Returns the set of resource IDs (as strings) the given user has bookmarked,
@@ -42,11 +42,6 @@ export function sanitizeResource(resource, bookmarkedIds = new Set()) {
     // For <iframe>/<img> previews only — see cloudinaryUrls.js for why this
     // needs to be a distinct URL from cloudinaryUrl.
     previewUrl: toInlinePreviewUrl(resource.cloudinaryUrl),
-    // For the Download button — sets a proper filename via Cloudinary's
-    // fl_attachment flag, since the plain cloudinaryUrl's default filename
-    // is the raw SHA-256 hash with no explicit Content-Disposition, which
-    // Android's download manager can fail to recognize as a PDF.
-    downloadUrl: toDownloadUrl(resource.cloudinaryUrl, resource.fileName),
     uploadedBy: uploader,
     downloads: resource.downloads,
     bookmarksCount: resource.bookmarks,

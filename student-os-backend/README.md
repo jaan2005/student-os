@@ -42,7 +42,8 @@ Server starts on `http://localhost:5000` (or `PORT` from `.env`).
 | PUT    | `/api/users/profile`  | Bearer JWT         | Saves Profile Setup fields, marks `profileCompleted: true`      |
 | GET    | `/api/resources`       | Bearer JWT         | List/search/filter/sort resources (`search`, `semester`, `subject`, `fileType`, `sort`, `page`, `limit`, `ids`) |
 | POST   | `/api/resources/upload`| Bearer JWT         | Multipart upload (`file` + metadata fields); dedups by SHA-256 hash before touching Cloudinary |
-| GET    | `/api/resources/:id`   | Bearer JWT         | Resource detail; pass `?download=true` to increment the downloads counter |
+| GET    | `/api/resources/:id`   | Bearer JWT         | Resource detail                                                   |
+| GET    | `/api/resources/:id/download` | Bearer JWT  | Streams the file with a correct `Content-Type`/`Content-Disposition`; increments the downloads counter |
 | PUT    | `/api/resources/:id`   | Bearer JWT, owner  | Edit resource metadata (not the file itself)                     |
 | DELETE | `/api/resources/:id`   | Bearer JWT, owner  | Deletes the resource, its Cloudinary asset, and any bookmarks of it |
 | GET    | `/api/subjects`        | Bearer JWT         | Folder-card data: resources grouped by Semester → Subject (note: mounted under `/api` for consistency, unlike the bare `/subjects` in the original spec) |
@@ -212,25 +213,36 @@ This matters for two reasons:
 3. **It defaults delivery to `Content-Disposition: attachment`**, which means
    the browser downloads a `raw`-type file the instant anything requests its
    URL — including an `<iframe>` trying to preview it. `sanitizeResource`
-   therefore returns three URLs, each for a distinct purpose:
-   - `cloudinaryUrl` — the underlying stored asset URL. Not meant to be used
-     directly by the frontend for either previewing or downloading anymore
-     (see the two below); kept mainly as a fallback and for reference.
+   returns two URLs for this:
+   - `cloudinaryUrl` — the underlying stored asset URL. Not used directly by
+     the frontend for previewing (see `previewUrl` below); kept as a
+     best-effort fallback if the dedicated download route (also below) is
+     ever unreachable.
    - `previewUrl` — same file, with `fl_attachment:false` inserted (see
      `utils/cloudinaryUrls.js`), used only by the frontend's `PDFViewer` and
      the "Preview" button. Using `cloudinaryUrl` here is exactly what causes
      "clicking Open just downloads the file instead of previewing it."
-   - `downloadUrl` — same file, with `fl_attachment:<real filename>`
-     inserted, used only by Download buttons. Cloudinary's *default*
-     attachment behavior (i.e. what plain `cloudinaryUrl` gives you) reports
-     the filename as the raw SHA-256 `public_id` with no explicit
-     Content-Disposition filename — desktop browsers are generally forgiving
-     and infer `.pdf` from the URL path anyway, but Android's download
-     manager leans more heavily on the actual Content-Disposition header;
-     with none given, it can save the file with no recognizable name or
-     extension, which is what "it downloads but nothing can open it" on
-     mobile looks like. `fl_attachment:<filename>` makes Cloudinary set an
-     explicit, correctly-named Content-Disposition instead.
+
+   **Downloads do not use a Cloudinary URL at all — they go through
+   `GET /api/resources/:id/download`** (`resourceController.downloadResourceFile`).
+   This fetches the file server-side and streams it back with a
+   `Content-Type` and `Content-Disposition` we set explicitly, rather than
+   relying on a Cloudinary transformation to produce them. There used to be
+   a `downloadUrl` built the same way as `previewUrl`, via
+   `fl_attachment:<filename>` — that's gone. It turned out Cloudinary's URL
+   parser rejects a filename containing a literal `.` with an outright
+   `HTTP 400` (confirmed live, not theoretical), and there wasn't enough
+   confidence in the exact escaping rules to keep guessing at a fix after
+   that. Fetching and re-serving the file ourselves sidesteps Cloudinary's
+   transformation syntax for downloads entirely — full control, no more
+   guessing.
+
+   Because this route needs the same `Authorization: Bearer <jwt>` header
+   as every other API call, the frontend can't just `window.open()` it (a
+   plain browser navigation can't attach custom headers) — it fetches the
+   file as a `Blob` through the normal authenticated API client instead,
+   then triggers the save via a temporary `<a download>` element (see the
+   frontend's `lib/downloadBlob.js`).
 
 ## AI Learning Module
 
