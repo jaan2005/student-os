@@ -11,10 +11,18 @@ export function fetchResources(params = {}) {
   return api.get('/resources', { params: cleaned }).then((res) => res.data)
 }
 
-export function fetchResourceById(id, { download = false } = {}) {
-  return api
-    .get(`/resources/${id}`, { params: download ? { download: 'true' } : undefined })
-    .then((res) => res.data.resource)
+export function fetchResourceById(id) {
+  return api.get(`/resources/${id}`).then((res) => res.data.resource)
+}
+
+/**
+ * Fetches the file as a Blob (not a URL) so the request goes through our
+ * normal authenticated API client rather than a direct, unauthenticated
+ * Cloudinary URL — also increments the resource's download counter
+ * server-side. Pair with lib/downloadBlob.js to actually save it.
+ */
+export function downloadResource(id) {
+  return api.get(`/resources/${id}/download`, { responseType: 'blob' }).then((res) => res.data)
 }
 
 /**

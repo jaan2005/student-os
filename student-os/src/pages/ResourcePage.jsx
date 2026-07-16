@@ -24,6 +24,7 @@ import AICreditsBadge from '../components/ai/AICreditsBadge.jsx'
 import { useAuth } from '../context/AuthContext.jsx'
 import {
   fetchResourceById,
+  downloadResource,
   addBookmark,
   removeBookmark,
   deleteResource,
@@ -31,6 +32,7 @@ import {
 import { getFileTypeMeta, formatFileSize, formatDate } from '../lib/format.js'
 import { buildInlinePreviewUrl } from '../lib/previewUrl.js'
 import { recordResourceView } from '../lib/recentlyViewed.js'
+import triggerBlobDownload from '../lib/downloadBlob.js'
 
 export default function ResourcePage() {
   const { id } = useParams()
@@ -44,6 +46,7 @@ export default function ResourcePage() {
   const [shareCopied, setShareCopied] = useState(false)
   const [deleting, setDeleting] = useState(false)
   const [bookmarkBusy, setBookmarkBusy] = useState(false)
+  const [downloading, setDownloading] = useState(false)
   const [explainOpen, setExplainOpen] = useState(false)
   const [summarizeOpen, setSummarizeOpen] = useState(false)
   const [quizOpen, setQuizOpen] = useState(false)
@@ -69,12 +72,16 @@ export default function ResourcePage() {
   }, [id])
 
   const handleDownload = async () => {
+    if (downloading) return
+    setDownloading(true)
     try {
-      const fresh = await fetchResourceById(id, { download: true })
-      setResource(fresh)
-      window.open(fresh.downloadUrl || fresh.cloudinaryUrl, '_blank', 'noopener,noreferrer')
+      const blob = await downloadResource(id)
+      triggerBlobDownload(blob, resource.fileName)
     } catch {
-      window.open(resource.downloadUrl || resource.cloudinaryUrl, '_blank', 'noopener,noreferrer')
+      // Best-effort fallback if our backend download route is unreachable.
+      window.open(resource.cloudinaryUrl, '_blank', 'noopener,noreferrer')
+    } finally {
+      setDownloading(false)
     }
   }
 
@@ -227,7 +234,13 @@ export default function ResourcePage() {
 
           <div className="grid grid-cols-2 gap-2.5 pt-1">
             <ActionButton onClick={handlePreview} icon={Eye} label="Preview" primary />
-            <ActionButton onClick={handleDownload} icon={Download} label="Download" />
+            <ActionButton
+              onClick={handleDownload}
+              icon={downloading ? Loader2 : Download}
+              label={downloading ? 'Downloading…' : 'Download'}
+              disabled={downloading}
+              iconClassName={downloading ? 'animate-spin' : ''}
+            />
             <ActionButton
               onClick={handleBookmark}
               icon={Bookmark}
@@ -296,7 +309,7 @@ function MetaRow({ label, value }) {
   )
 }
 
-function ActionButton({ onClick, icon: Icon, label, primary, active, danger, disabled, filled }) {
+function ActionButton({ onClick, icon: Icon, label, primary, active, danger, disabled, filled, iconClassName = '' }) {
   return (
     <button
       onClick={onClick}
@@ -311,7 +324,7 @@ function ActionButton({ onClick, icon: Icon, label, primary, active, danger, dis
               : 'border border-white/10 text-ink hover:border-white/20 hover:bg-white/[0.03]'
       }`}
     >
-      <Icon size={14} fill={filled ? 'currentColor' : 'none'} />
+      <Icon size={14} fill={filled ? 'currentColor' : 'none'} className={iconClassName} />
       {label}
     </button>
   )

@@ -68,28 +68,34 @@ single source of truth for what `resourceType` gets stored — a renamed `.exe`
 sent as `application/pdf` would still be rejected by Multer's `fileFilter`
 before it reaches the controller.
 
-**Preview and download are deliberately different URLs — three, not two.**
-Cloudinary's `raw` resource type (used for PDF/DOC/PPT — see backend README
-for why) defaults delivery to `Content-Disposition: attachment`, which makes
-the browser download the file the instant anything requests that URL,
-including an `<iframe>` trying to render it inline. Every resource response
-includes:
-- `cloudinaryUrl` — the underlying stored asset URL; not used directly by
-  the frontend anymore, kept mainly as a fallback.
-- `previewUrl` — `fl_attachment:false` inserted server-side, used only by
-  `PDFViewer`'s `<iframe>`/`<img>` and the "Preview" button.
-- `downloadUrl` — `fl_attachment:<real filename>` inserted server-side, used
-  only by Download buttons. The plain `cloudinaryUrl`'s default filename is
-  the raw SHA-256 hash with no explicit Content-Disposition — desktop
-  browsers mostly infer `.pdf` from the URL anyway, but Android's download
-  manager relies more on the actual header, and without one could save the
-  file with no recognizable extension — which is what "it downloads but
-  nothing can open it" on mobile looks like.
+**Previewing and downloading go through completely different mechanisms —
+not just different URLs.** Cloudinary's `raw` resource type (used for
+PDF/DOC/PPT — see backend README for why) defaults delivery to
+`Content-Disposition: attachment`, which makes the browser download the
+file the instant anything requests that URL, including an `<iframe>` trying
+to render it inline.
 
-`ResourcePage` and `ResourceCard` use `previewUrl` for anything meant to
-render inline and `downloadUrl` for anything meant to save to disk; mixing
-these up is exactly what causes either "clicking Open just downloads the
-file" or "the download exists but nothing can open it."
+- **Preview** uses `previewUrl` (from `sanitizeResource`) — the same file
+  with `fl_attachment:false` inserted server-side, used by `PDFViewer`'s
+  `<iframe>`/`<img>` and the "Preview" button.
+- **Download** doesn't use a Cloudinary URL at all. It hits
+  `GET /api/resources/:id/download`, which fetches the file server-side and
+  streams it back with `Content-Type`/`Content-Disposition` the backend
+  sets explicitly. There used to be a `downloadUrl` built the same way as
+  `previewUrl` (via `fl_attachment:<filename>`) — that's gone. Cloudinary's
+  URL parser turned out to reject a filename containing a literal `.` with
+  an outright `HTTP 400` (confirmed live), and there wasn't enough
+  confidence in the exact escaping rules to keep patching around it.
+  Fetching and re-serving the file ourselves sidesteps that entirely.
+
+Because the download route needs the same `Authorization: Bearer <jwt>`
+header as every other API call, `ResourceCard`/`ResourcePage` can't just
+`window.open()` it — a plain browser navigation can't attach custom
+headers. Instead, `resourceService.downloadResource()` fetches the file as
+a `Blob` through the normal authenticated API client, and
+`lib/downloadBlob.js` triggers the actual save via a temporary
+`<a download>` element, which is also what lets the browser use the exact
+correct filename regardless of platform.
 
 **"Study Tools" (Generate Quiz / Ask AI / Summarize / Flashcards) are
 deliberately inert in V1** — `ResourcePage`'s buttons are disabled with a

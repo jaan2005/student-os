@@ -1,14 +1,16 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { Download, Bookmark, Share2, Trash2, Check, ExternalLink } from 'lucide-react'
+import { Download, Bookmark, Share2, Trash2, Check, ExternalLink, Loader2 } from 'lucide-react'
 import { getFileTypeMeta, formatFileSize, formatDate } from '../lib/format.js'
-import { fetchResourceById } from '../services/resourceService.js'
+import { downloadResource } from '../services/resourceService.js'
+import triggerBlobDownload from '../lib/downloadBlob.js'
 
 export default function ResourceCard({ resource, currentUserId, currentUserRole, onToggleBookmark, onDelete, view = 'grid' }) {
   const navigate = useNavigate()
   const [shareCopied, setShareCopied] = useState(false)
   const [deleting, setDeleting] = useState(false)
+  const [downloading, setDownloading] = useState(false)
 
   const { icon: Icon, color, bg, border } = getFileTypeMeta(resource.resourceType)
   const isOwner = currentUserId && resource.uploadedBy?.id === currentUserId
@@ -21,11 +23,16 @@ export default function ResourceCard({ resource, currentUserId, currentUserRole,
 
   const handleDownload = async (e) => {
     e.stopPropagation()
+    if (downloading) return
+    setDownloading(true)
     try {
-      const fresh = await fetchResourceById(resource.id, { download: true })
-      window.open(fresh.downloadUrl || fresh.cloudinaryUrl, '_blank', 'noopener,noreferrer')
+      const blob = await downloadResource(resource.id)
+      triggerBlobDownload(blob, resource.fileName)
     } catch {
-      window.open(resource.downloadUrl || resource.cloudinaryUrl, '_blank', 'noopener,noreferrer')
+      // Best-effort fallback if our backend download route is unreachable.
+      window.open(resource.cloudinaryUrl, '_blank', 'noopener,noreferrer')
+    } finally {
+      setDownloading(false)
     }
   }
 
@@ -82,8 +89,8 @@ export default function ResourceCard({ resource, currentUserId, currentUserRole,
           <IconButton onClick={handleBookmark} active={resource.isBookmarked} label="Bookmark">
             <Bookmark size={15} fill={resource.isBookmarked ? 'currentColor' : 'none'} />
           </IconButton>
-          <IconButton onClick={handleDownload} label="Download">
-            <Download size={15} />
+          <IconButton onClick={handleDownload} label="Download" disabled={downloading}>
+            {downloading ? <Loader2 size={15} className="animate-spin" /> : <Download size={15} />}
           </IconButton>
           <IconButton onClick={handleShare} label="Share">
             {shareCopied ? <Check size={15} className="text-primary-light" /> : <Share2 size={15} />}
@@ -161,8 +168,8 @@ export default function ResourceCard({ resource, currentUserId, currentUserRole,
           <ExternalLink size={13} />
           Open
         </button>
-        <IconButton onClick={handleDownload} label="Download">
-          <Download size={14} />
+        <IconButton onClick={handleDownload} label="Download" disabled={downloading}>
+          {downloading ? <Loader2 size={14} className="animate-spin" /> : <Download size={14} />}
         </IconButton>
         <IconButton onClick={handleShare} label="Share">
           {shareCopied ? <Check size={14} className="text-primary-light" /> : <Share2 size={14} />}
