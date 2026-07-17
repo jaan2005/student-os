@@ -18,7 +18,12 @@ export default function ProfileSetup() {
   const [form, setForm] = useState({
     firstName: user?.firstName || '',
     lastName: user?.lastName || '',
-    college: user?.college || '',
+    // Only trust a previously-saved college if it's still a valid option —
+    // otherwise a stale value (e.g. saved back when this was a free-text
+    // field, before validation existed) would silently ride along in state
+    // even though the dropdown visually shows the one real option, since
+    // nothing forces the user to actually reopen/reselect it themselves.
+    college: COLLEGES.includes(user?.college) ? user.college : '',
     branch: user?.branch || '',
     semester: user?.semester || '',
   })
