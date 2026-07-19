@@ -15,7 +15,7 @@ import { notFound, errorHandler } from './src/middleware/errorHandler.js'
 
 const app = express()
 
-const allowedOrigins = (process.env.CLIENT_URL || 'https://student-os-gules-ten.vercel.app')
+const allowedOrigins = (process.env.CLIENT_URL || 'https://studentosapp.tech')
   .split(',')
   .map((origin) => origin.trim())
 
