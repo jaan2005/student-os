@@ -119,7 +119,7 @@ export default function NotesPage() {
               loading={filteredResults.loading}
               view={view}
               currentUserId={user?.id}
-                currentUserRole={user?.role}
+              currentUserRole={user?.role}
               onToggleBookmark={filteredResults.toggleBookmark}
               onDelete={(id) => handleDelete(id, filteredResults)}
               emptyTitle="No resources match your search"
@@ -151,6 +151,7 @@ export default function NotesPage() {
               <ResourceGrid
                 resources={recentUploads.resources}
                 loading={recentUploads.loading}
+                view={view}
                 currentUserId={user?.id}
                 currentUserRole={user?.role}
                 onToggleBookmark={recentUploads.toggleBookmark}
@@ -164,6 +165,7 @@ export default function NotesPage() {
               <ResourceGrid
                 resources={popular.resources}
                 loading={popular.loading}
+                view={view}
                 currentUserId={user?.id}
                 currentUserRole={user?.role}
                 onToggleBookmark={popular.toggleBookmark}
@@ -178,8 +180,9 @@ export default function NotesPage() {
                 <ResourceGrid
                   resources={recentlyViewed.resources}
                   loading={recentlyViewed.loading}
+                  view={view}
                   currentUserId={user?.id}
-                currentUserRole={user?.role}
+                  currentUserRole={user?.role}
                   onToggleBookmark={recentlyViewed.toggleBookmark}
                   onDelete={(id) => handleDelete(id, recentlyViewed)}
                   emptyTitle="Nothing viewed recently"
