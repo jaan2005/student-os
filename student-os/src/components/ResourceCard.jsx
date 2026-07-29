@@ -64,6 +64,9 @@ export default function ResourceCard({ resource, currentUserId, currentUserRole,
     }
   }
 
+  const isCareer = resource.category === 'career'
+  const showApprovalBadge = isCareer && resource.approvalStatus !== 'approved'
+
   if (view === 'list') {
     return (
       <motion.div
@@ -78,11 +81,16 @@ export default function ResourceCard({ resource, currentUserId, currentUserRole,
           <Icon size={19} className={color} />
         </span>
         <div className="flex-1 min-w-0">
-          <p className="text-sm font-medium text-ink truncate">{resource.title}</p>
+          <div className="flex items-center gap-2">
+            <p className="text-sm font-medium text-ink truncate">{resource.title}</p>
+            {showApprovalBadge && <ApprovalBadge status={resource.approvalStatus} />}
+          </div>
           <p className="text-xs text-ink-faint truncate mt-0.5">
-            {resource.subject} · Semester {resource.semester}
-            {resource.unit ? ` · ${resource.unit}` : ''}
-            {resource.topic ? ` · ${resource.topic}` : ''}
+            {isCareer
+              ? resource.description || 'Career Resource'
+              : `${resource.subject} · Semester ${resource.semester}${resource.unit ? ` · ${resource.unit}` : ''}${
+                  resource.topic ? ` · ${resource.topic}` : ''
+                }`}
           </p>
         </div>
         <div className="hidden sm:flex items-center gap-1 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -130,17 +138,22 @@ export default function ResourceCard({ resource, currentUserId, currentUserRole,
         </button>
       </div>
 
-      <h3 className="mt-4 font-display text-[15px] font-semibold text-ink line-clamp-1">{resource.title}</h3>
+      <div className="mt-4 flex items-center gap-2">
+        <h3 className="font-display text-[15px] font-semibold text-ink line-clamp-1">{resource.title}</h3>
+        {showApprovalBadge && <ApprovalBadge status={resource.approvalStatus} />}
+      </div>
       {resource.description && (
         <p className="mt-1.5 text-[13px] text-ink-muted leading-relaxed line-clamp-2">{resource.description}</p>
       )}
 
-      <div className="mt-3 flex flex-wrap gap-1.5">
-        <MetaPill>{resource.subject}</MetaPill>
-        <MetaPill>Sem {resource.semester}</MetaPill>
-        {resource.unit && <MetaPill>{resource.unit}</MetaPill>}
-        {resource.topic && <MetaPill>{resource.topic}</MetaPill>}
-      </div>
+      {!isCareer && (
+        <div className="mt-3 flex flex-wrap gap-1.5">
+          <MetaPill>{resource.subject}</MetaPill>
+          <MetaPill>Sem {resource.semester}</MetaPill>
+          {resource.unit && <MetaPill>{resource.unit}</MetaPill>}
+          {resource.topic && <MetaPill>{resource.topic}</MetaPill>}
+        </div>
+      )}
 
       {resource.tags?.length > 0 && (
         <div className="mt-2 flex flex-wrap gap-1.5">
@@ -190,6 +203,22 @@ function MetaPill({ children }) {
   return (
     <span className="text-[10px] text-ink-muted bg-white/[0.04] border border-white/[0.07] rounded-full px-2 py-0.5">
       {children}
+    </span>
+  )
+}
+
+// Only ever rendered for a resource's own uploader or an admin — the
+// backend never returns a pending/rejected career resource to anyone else
+// (see canViewResource in resourceController.js), so seeing this badge at
+// all already implies the viewer is allowed to know the status.
+function ApprovalBadge({ status }) {
+  const styles =
+    status === 'rejected'
+      ? 'text-red-400 bg-red-500/10 border-red-500/20'
+      : 'text-amber-400 bg-amber-500/10 border-amber-500/20'
+  return (
+    <span className={`shrink-0 text-[10px] px-2 py-0.5 rounded-full border eyebrow ${styles}`}>
+      {status === 'rejected' ? 'Rejected' : 'Pending Review'}
     </span>
   )
 }

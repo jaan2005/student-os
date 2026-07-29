@@ -4,4 +4,7 @@
 // against its own copy (never trust the dropdown alone).
 //
 // TODO: replace with your actual college name before launch.
-export const COLLEGES = ['M.H. Saboo Siddik College of Engineering']
+export const COLLEGES = [
+  'M.H. Saboo Siddik College of Engineering',
+  "Vivekanand Education Society's College of Pharmacy",
+]

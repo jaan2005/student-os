@@ -15,3 +15,12 @@ export const ROLE_LABELS = {
 export function canUpload(role) {
   return role === ROLES.TRUSTED_CONTRIBUTOR || role === ROLES.ADMIN
 }
+
+// Career Resources upload access is a separate, admin-granted permission
+// (User.canUploadCareer), independent of the academic trustedContributor
+// role — a plain student can have it, a trustedContributor might not.
+// Admins can always upload Career Resources regardless of the flag.
+export function canUploadCareer(user) {
+  if (!user) return false
+  return user.role === ROLES.ADMIN || !!user.canUploadCareer
+}

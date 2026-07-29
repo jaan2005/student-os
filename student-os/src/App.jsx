@@ -10,10 +10,12 @@ import Signup from './pages/Signup.jsx'
 import ProfileSetup from './pages/ProfileSetup.jsx'
 import Dashboard from './pages/Dashboard.jsx'
 import NotesPage from './pages/NotesPage.jsx'
+import CareerResourcesPage from './pages/CareerResourcesPage.jsx'
 import SubjectPage from './pages/SubjectPage.jsx'
 import ResourcePage from './pages/ResourcePage.jsx'
 import BookmarksPage from './pages/BookmarksPage.jsx'
 import AdminUsersPage from './pages/AdminUsersPage.jsx'
+import AdminCareerApprovalsPage from './pages/AdminCareerApprovalsPage.jsx'
 
 export default function App() {
   return (
@@ -54,11 +56,13 @@ export default function App() {
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/notes" element={<NotesPage />} />
             <Route path="/notes/:semester/:subject" element={<SubjectPage />} />
+            <Route path="/career-resources" element={<CareerResourcesPage />} />
             <Route path="/resources/:id" element={<ResourcePage />} />
             <Route path="/bookmarks" element={<BookmarksPage />} />
 
             <Route element={<AdminRoute />}>
               <Route path="/admin/users" element={<AdminUsersPage />} />
+              <Route path="/admin/career-resources" element={<AdminCareerApprovalsPage />} />
             </Route>
           </Route>
         </Route>

@@ -3,9 +3,9 @@ import { motion } from 'framer-motion'
 import {
   Menu,
   BookOpen,
+  Briefcase,
   Bot,
   Bookmark,
-  FileQuestion,
   GraduationCap,
   Building2,
   CalendarDays,
@@ -16,12 +16,17 @@ import InstallAppBanner from '../components/InstallAppBanner.jsx'
 
 const quickLinks = [
   { icon: BookOpen, title: 'Notes & Resources', description: 'Browse, search, and upload study material.', to: '/notes' },
-  { icon: Bookmark, title: 'Bookmarks', description: 'Everything you\u2019ve saved for later.', to: '/bookmarks' },
-  { icon: Bot, title: 'AI Study Assistant', description: 'Ask questions about your notes.', comingSoon: true },
   {
-    icon: FileQuestion,
-    title: 'AI Quiz Generator',
-    description: 'Open any resource to generate a quiz from it.',
+    icon: Briefcase,
+    title: 'Career Resources',
+    description: 'Resume templates, interview experiences, and placement material.',
+    to: '/career-resources',
+  },
+  { icon: Bookmark, title: 'Bookmarks', description: 'Everything you\u2019ve saved for later.', to: '/bookmarks' },
+  {
+    icon: Bot,
+    title: 'AI Study Assistant',
+    description: 'Open any PDF resource to chat with the Assistant about it.',
     to: '/notes',
   },
 ]

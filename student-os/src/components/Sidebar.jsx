@@ -1,25 +1,33 @@
+import { useEffect, useState } from 'react'
 import { NavLink, useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   LayoutDashboard,
   BookOpen,
+  Briefcase,
   Bookmark,
   Bot,
   User,
   Settings,
   LogOut,
   Shield,
+  ClipboardCheck,
   X,
 } from 'lucide-react'
 import Logo from './Logo.jsx'
 import { useAuth } from '../context/AuthContext.jsx'
 import { ROLES, ROLE_LABELS } from '../constants/roles.js'
+import { fetchPendingCareerResources } from '../services/adminService.js'
 
 const baseNavItems = [
   { label: 'Dashboard', to: '/dashboard', icon: LayoutDashboard },
   { label: 'Notes & Resources', to: '/notes', icon: BookOpen },
+  { label: 'Career Resources', to: '/career-resources', icon: Briefcase },
   { label: 'Bookmarks', to: '/bookmarks', icon: Bookmark },
-  { label: 'AI Study Assistant', icon: Bot, disabled: true },
+  // Not a standalone page — the Assistant is scoped to one resource at a
+  // time (see ResourcePage.jsx's Study Tools). This links into Notes &
+  // Resources rather than being disabled, since the feature itself is live.
+  { label: 'AI Study Assistant', to: '/notes', icon: Bot },
   { label: 'Profile', to: '/profile-setup', icon: User },
   { label: 'Settings', icon: Settings, disabled: true },
 ]
@@ -33,6 +41,22 @@ const ROLE_BADGE_STYLES = {
 function SidebarContent({ onNavigate }) {
   const { user, logout } = useAuth()
   const navigate = useNavigate()
+  const [pendingCount, setPendingCount] = useState(0)
+
+  useEffect(() => {
+    if (user?.role !== ROLES.ADMIN) return
+    let cancelled = false
+    fetchPendingCareerResources()
+      .then((resources) => {
+        if (!cancelled) setPendingCount(resources.length)
+      })
+      .catch(() => {
+        // Non-critical — the badge just won't show a count this session.
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [user?.role])
 
   const handleLogout = async () => {
     await logout()
@@ -43,7 +67,11 @@ function SidebarContent({ onNavigate }) {
 
   const navItems =
     user?.role === ROLES.ADMIN
-      ? [...baseNavItems, { label: 'Admin', to: '/admin/users', icon: Shield }]
+      ? [
+          ...baseNavItems,
+          { label: 'Career Approvals', to: '/admin/career-resources', icon: ClipboardCheck, badge: pendingCount || null },
+          { label: 'Admin', to: '/admin/users', icon: Shield },
+        ]
       : baseNavItems
 
   return (
@@ -78,15 +106,22 @@ function SidebarContent({ onNavigate }) {
               to={item.to}
               onClick={onNavigate}
               className={({ isActive }) =>
-                `flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors border ${
+                `flex items-center justify-between gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors border ${
                   isActive
                     ? 'bg-primary/15 text-ink border-primary/25'
                     : 'text-ink-muted hover:text-ink hover:bg-white/[0.04] border-transparent'
                 }`
               }
             >
-              <item.icon size={17} />
-              {item.label}
+              <span className="flex items-center gap-3">
+                <item.icon size={17} />
+                {item.label}
+              </span>
+              {!!item.badge && (
+                <span className="text-[10px] font-medium text-amber-400 bg-amber-500/10 border border-amber-500/20 rounded-full px-1.5 py-0.5">
+                  {item.badge}
+                </span>
+              )}
             </NavLink>
           )
         )}

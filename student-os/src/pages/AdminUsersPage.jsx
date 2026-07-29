@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react'
 import { useOutletContext } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { Menu, Shield, Search, Users as UsersIcon } from 'lucide-react'
+import { Menu, Shield, Search, Users as UsersIcon, Briefcase } from 'lucide-react'
 import { useAuth } from '../context/AuthContext.jsx'
-import { fetchUsers, updateUserRole } from '../services/adminService.js'
+import { fetchUsers, updateUserRole, updateCareerAccess } from '../services/adminService.js'
 import { ROLES, ALL_ROLES, ROLE_LABELS } from '../constants/roles.js'
 import useDebounce from '../hooks/useDebounce.js'
 import LoadingSkeleton from '../components/LoadingSkeleton.jsx'
@@ -59,6 +59,20 @@ export default function AdminUsersPage() {
     }
   }
 
+  const handleCareerAccessToggle = async (targetUser) => {
+    const next = !targetUser.canUploadCareer
+    setUpdatingId(targetUser.id)
+    setUsers((prev) => prev.map((u) => (u.id === targetUser.id ? { ...u, canUploadCareer: next } : u)))
+    try {
+      await updateCareerAccess(targetUser.id, next)
+    } catch (err) {
+      setUsers((prev) => prev.map((u) => (u.id === targetUser.id ? { ...u, canUploadCareer: !next } : u)))
+      setError(err?.response?.data?.message || 'Could not update Career Resources access.')
+    } finally {
+      setUpdatingId(null)
+    }
+  }
+
   return (
     <div>
       <header className="sticky top-0 z-20 bg-base/80 backdrop-blur-xl border-b border-white/[0.06]">
@@ -97,10 +111,11 @@ export default function AdminUsersPage() {
           <EmptyState icon={UsersIcon} title="No users found" description="Try a different search term." />
         ) : (
           <div className="rounded-2xl border border-white/[0.07] bg-base-card/40 overflow-hidden">
-            <div className="hidden sm:grid grid-cols-[1fr_140px_140px_160px] gap-4 px-5 py-3 text-[11px] text-ink-faint eyebrow border-b border-white/[0.06]">
+            <div className="hidden sm:grid grid-cols-[1fr_140px_140px_140px_160px] gap-4 px-5 py-3 text-[11px] text-ink-faint eyebrow border-b border-white/[0.06]">
               <span>USER</span>
               <span>ROLE</span>
               <span>UPLOADS THIS MONTH</span>
+              <span>CAREER ACCESS</span>
               <span>CHANGE ROLE</span>
             </div>
             <div className="divide-y divide-white/[0.06]">
@@ -114,7 +129,7 @@ export default function AdminUsersPage() {
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     transition={{ duration: 0.3, delay: Math.min(i * 0.03, 0.3) }}
-                    className="grid sm:grid-cols-[1fr_140px_140px_160px] gap-4 px-5 py-4 items-center"
+                    className="grid sm:grid-cols-[1fr_140px_140px_140px_160px] gap-4 px-5 py-4 items-center"
                   >
                     <div className="flex items-center gap-3 min-w-0">
                       <div className="w-8 h-8 rounded-full bg-primary/20 border border-primary/30 flex items-center justify-center text-[11px] font-medium text-primary-light shrink-0">
@@ -138,6 +153,24 @@ export default function AdminUsersPage() {
                     <span className="text-[13px] text-ink-muted">
                       {u.role === ROLES.STUDENT ? '—' : `${u.monthlyUploadCount} / ${u.monthlyUploadLimit}`}
                     </span>
+
+                    <button
+                      onClick={() => handleCareerAccessToggle(u)}
+                      disabled={u.role === ROLES.ADMIN || updatingId === u.id}
+                      title={
+                        u.role === ROLES.ADMIN
+                          ? 'Admins can always upload Career Resources'
+                          : 'Grant or revoke Career Resources upload access'
+                      }
+                      className={`inline-flex w-fit items-center gap-1.5 text-[11px] px-2.5 py-1 rounded-full border transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
+                        u.role === ROLES.ADMIN || u.canUploadCareer
+                          ? 'text-accent-cyan bg-accent-cyan/10 border-accent-cyan/20'
+                          : 'text-ink-faint bg-white/[0.04] border-white/[0.08] hover:text-ink-muted'
+                      }`}
+                    >
+                      <Briefcase size={11} />
+                      {u.role === ROLES.ADMIN || u.canUploadCareer ? 'Enabled' : 'Disabled'}
+                    </button>
 
                     <select
                       value={u.role}

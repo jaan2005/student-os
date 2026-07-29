@@ -13,6 +13,7 @@ import {
   Lightbulb,
   FileText,
   FileQuestion,
+  Bot,
   Layers as FlashcardsIcon,
   Loader2,
 } from 'lucide-react'
@@ -20,6 +21,7 @@ import PDFViewer from '../components/PDFViewer.jsx'
 import ExplainPanel from '../components/ai/ExplainPanel.jsx'
 import SummarizePanel from '../components/ai/SummarizePanel.jsx'
 import QuizPanel from '../components/ai/QuizPanel.jsx'
+import AssistantPanel from '../components/ai/AssistantPanel.jsx'
 import AICreditsBadge from '../components/ai/AICreditsBadge.jsx'
 import { useAuth } from '../context/AuthContext.jsx'
 import {
@@ -50,6 +52,7 @@ export default function ResourcePage() {
   const [explainOpen, setExplainOpen] = useState(false)
   const [summarizeOpen, setSummarizeOpen] = useState(false)
   const [quizOpen, setQuizOpen] = useState(false)
+  const [assistantOpen, setAssistantOpen] = useState(false)
 
   useEffect(() => {
     let cancelled = false
@@ -59,7 +62,7 @@ export default function ResourcePage() {
       .then((data) => {
         if (cancelled) return
         setResource(data)
-        recordResourceView(data.id)
+        recordResourceView(data.id, data.category)
       })
       .catch((err) => {
         if (cancelled) return
@@ -268,8 +271,22 @@ export default function ResourcePage() {
               <StudyToolButton icon={Lightbulb} label="Explain Topic" onClick={() => setExplainOpen(true)} />
               <StudyToolButton icon={FileText} label="Summarize PDF" onClick={() => setSummarizeOpen(true)} />
               <StudyToolButton icon={FileQuestion} label="Generate Quiz" onClick={() => setQuizOpen(true)} />
+              {resource.resourceType === 'pdf' ? (
+                <StudyToolButton icon={Bot} label="AI Assistant" onClick={() => setAssistantOpen(true)} />
+              ) : (
+                <div
+                  className="relative flex items-center gap-2 rounded-lg border border-white/[0.07] bg-white/[0.02] px-3 py-2.5 text-ink-faint cursor-not-allowed"
+                  title="AI Assistant currently supports PDF resources only"
+                >
+                  <Bot size={15} />
+                  <span className="text-xs">AI Assistant</span>
+                  <span className="absolute -top-1.5 -right-1.5 eyebrow text-[8px] bg-base-card border border-white/[0.1] text-ink-faint px-1.5 py-0.5 rounded-full">
+                    PDF ONLY
+                  </span>
+                </div>
+              )}
               <div
-                className="relative flex items-center gap-2 rounded-lg border border-white/[0.07] bg-white/[0.02] px-3 py-2.5 text-ink-faint cursor-not-allowed"
+                className="col-span-2 relative flex items-center gap-2 rounded-lg border border-white/[0.07] bg-white/[0.02] px-3 py-2.5 text-ink-faint cursor-not-allowed"
                 title="Coming soon"
               >
                 <FlashcardsIcon size={15} />
@@ -296,6 +313,7 @@ export default function ResourcePage() {
         resourceId={resource.id}
         resourceType={resource.resourceType}
       />
+      <AssistantPanel open={assistantOpen} onClose={() => setAssistantOpen(false)} resourceId={resource.id} />
     </div>
   )
 }

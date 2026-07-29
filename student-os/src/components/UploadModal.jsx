@@ -29,6 +29,7 @@ const EXTENSION_TO_TYPE = {
 const ALLOWED_EXTENSIONS = ['pdf', 'doc', 'docx', 'ppt', 'pptx', 'jpg', 'jpeg', 'png']
 
 const emptyForm = {
+  category: 'academic',
   title: '',
   description: '',
   semester: '',
@@ -39,11 +40,19 @@ const emptyForm = {
   resourceType: '',
 }
 
-export default function UploadModal({ open, onClose, onSuccess, initialValues }) {
+/**
+ * `category`: 'academic' | 'career'. Drives which fields are required and
+ * shown — academic needs semester/subject (unchanged V1 behavior); career
+ * needs a real description instead (semester/subject don't apply to things
+ * like resume templates or interview writeups) and every upload is
+ * moderation-gated server-side regardless of what's submitted here.
+ */
+export default function UploadModal({ open, onClose, onSuccess, initialValues, category = 'academic' }) {
   const navigate = useNavigate()
   const fileInputRef = useRef(null)
+  const isCareer = category === 'career'
 
-  const [form, setForm] = useState({ ...emptyForm, ...initialValues })
+  const [form, setForm] = useState({ ...emptyForm, category, ...initialValues })
   const [file, setFile] = useState(null)
   const [fieldErrors, setFieldErrors] = useState({})
   const [fileError, setFileError] = useState('')
@@ -56,7 +65,7 @@ export default function UploadModal({ open, onClose, onSuccess, initialValues })
   const [bookmarked, setBookmarked] = useState(false)
 
   const reset = () => {
-    setForm({ ...emptyForm, ...initialValues })
+    setForm({ ...emptyForm, category, ...initialValues })
     setFile(null)
     setFieldErrors({})
     setFileError('')
@@ -112,8 +121,12 @@ export default function UploadModal({ open, onClose, onSuccess, initialValues })
   const validate = () => {
     const errors = {}
     if (!form.title.trim()) errors.title = 'Title is required.'
-    if (!form.semester) errors.semester = 'Select a semester.'
-    if (!form.subject.trim()) errors.subject = 'Subject is required.'
+    if (isCareer) {
+      if (!form.description.trim()) errors.description = 'Description is required.'
+    } else {
+      if (!form.semester) errors.semester = 'Select a semester.'
+      if (!form.subject.trim()) errors.subject = 'Subject is required.'
+    }
     setFieldErrors(errors)
 
     let fErr = ''
@@ -137,7 +150,7 @@ export default function UploadModal({ open, onClose, onSuccess, initialValues })
       } else {
         setStatus('done')
         onSuccess?.(data.resource)
-        setTimeout(handleClose, 900)
+        setTimeout(handleClose, isCareer ? 1400 : 900)
       }
     } catch (err) {
       setStatus('form')
@@ -236,7 +249,9 @@ export default function UploadModal({ open, onClose, onSuccess, initialValues })
           ) : (
             <>
               <div className="flex items-center justify-between mb-6">
-                <h3 className="font-display text-lg font-semibold text-ink">Upload Resource</h3>
+                <h3 className="font-display text-lg font-semibold text-ink">
+                  {isCareer ? 'Submit Career Resource' : 'Upload Resource'}
+                </h3>
                 <button
                   onClick={handleClose}
                   disabled={status === 'uploading'}
@@ -267,90 +282,106 @@ export default function UploadModal({ open, onClose, onSuccess, initialValues })
 
                 <div>
                   <label htmlFor="description" className="block text-xs font-medium text-ink-muted mb-1.5">
-                    Description
+                    Description {isCareer && <span className="text-ink-faint">(required)</span>}
                   </label>
                   <textarea
                     id="description"
                     name="description"
                     value={form.description}
                     onChange={onChange}
-                    rows={2}
-                    placeholder="Optional short summary of this resource"
-                    className="w-full rounded-lg bg-white/[0.03] border border-white/10 px-3.5 py-2.5 text-sm text-ink placeholder:text-ink-faint outline-none focus:border-primary/60 transition-colors resize-none"
+                    rows={isCareer ? 3 : 2}
+                    placeholder={
+                      isCareer
+                        ? 'What is this and who is it useful for? e.g. "Interview experience — TCS off-campus drive, SDE role, 3 rounds."'
+                        : 'Optional short summary of this resource'
+                    }
+                    className={`w-full rounded-lg bg-white/[0.03] border ${
+                      fieldErrors.description ? 'border-red-500/50' : 'border-white/10'
+                    } px-3.5 py-2.5 text-sm text-ink placeholder:text-ink-faint outline-none focus:border-primary/60 transition-colors resize-none`}
                   />
+                  {fieldErrors.description && <p className="mt-1.5 text-xs text-red-400">{fieldErrors.description}</p>}
+                  {isCareer && (
+                    <p className="mt-1.5 text-[11px] text-ink-faint">
+                      Every Career Resource is reviewed before it becomes visible to other students.
+                    </p>
+                  )}
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label htmlFor="semester" className="block text-xs font-medium text-ink-muted mb-1.5">
-                      Semester
-                    </label>
-                    <select
-                      id="semester"
-                      name="semester"
-                      value={form.semester}
-                      onChange={onChange}
-                      className={`w-full rounded-lg bg-white/[0.03] border ${
-                        fieldErrors.semester ? 'border-red-500/50' : 'border-white/10'
-                      } px-3.5 py-2.5 text-sm text-ink outline-none focus:border-primary/60 transition-colors`}
-                    >
-                      <option value="" className="bg-base-card">
-                        Select
-                      </option>
-                      {SEMESTERS.map((s) => (
-                        <option key={s} value={s} className="bg-base-card">
-                          Semester {s}
-                        </option>
-                      ))}
-                    </select>
-                    {fieldErrors.semester && <p className="mt-1.5 text-xs text-red-400">{fieldErrors.semester}</p>}
-                  </div>
-                  <div>
-                    <label htmlFor="subject" className="block text-xs font-medium text-ink-muted mb-1.5">
-                      Subject
-                    </label>
-                    <input
-                      id="subject"
-                      name="subject"
-                      value={form.subject}
-                      onChange={onChange}
-                      placeholder="e.g. Operating Systems"
-                      className={`w-full rounded-lg bg-white/[0.03] border ${
-                        fieldErrors.subject ? 'border-red-500/50' : 'border-white/10'
-                      } px-3.5 py-2.5 text-sm text-ink placeholder:text-ink-faint outline-none focus:border-primary/60 transition-colors`}
-                    />
-                    {fieldErrors.subject && <p className="mt-1.5 text-xs text-red-400">{fieldErrors.subject}</p>}
-                  </div>
-                </div>
+                {!isCareer && (
+                  <>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label htmlFor="semester" className="block text-xs font-medium text-ink-muted mb-1.5">
+                          Semester
+                        </label>
+                        <select
+                          id="semester"
+                          name="semester"
+                          value={form.semester}
+                          onChange={onChange}
+                          className={`w-full rounded-lg bg-white/[0.03] border ${
+                            fieldErrors.semester ? 'border-red-500/50' : 'border-white/10'
+                          } px-3.5 py-2.5 text-sm text-ink outline-none focus:border-primary/60 transition-colors`}
+                        >
+                          <option value="" className="bg-base-card">
+                            Select
+                          </option>
+                          {SEMESTERS.map((s) => (
+                            <option key={s} value={s} className="bg-base-card">
+                              Semester {s}
+                            </option>
+                          ))}
+                        </select>
+                        {fieldErrors.semester && <p className="mt-1.5 text-xs text-red-400">{fieldErrors.semester}</p>}
+                      </div>
+                      <div>
+                        <label htmlFor="subject" className="block text-xs font-medium text-ink-muted mb-1.5">
+                          Subject
+                        </label>
+                        <input
+                          id="subject"
+                          name="subject"
+                          value={form.subject}
+                          onChange={onChange}
+                          placeholder="e.g. Operating Systems"
+                          className={`w-full rounded-lg bg-white/[0.03] border ${
+                            fieldErrors.subject ? 'border-red-500/50' : 'border-white/10'
+                          } px-3.5 py-2.5 text-sm text-ink placeholder:text-ink-faint outline-none focus:border-primary/60 transition-colors`}
+                        />
+                        {fieldErrors.subject && <p className="mt-1.5 text-xs text-red-400">{fieldErrors.subject}</p>}
+                      </div>
+                    </div>
 
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label htmlFor="unit" className="block text-xs font-medium text-ink-muted mb-1.5">
-                      Unit
-                    </label>
-                    <input
-                      id="unit"
-                      name="unit"
-                      value={form.unit}
-                      onChange={onChange}
-                      placeholder="e.g. Unit 3"
-                      className="w-full rounded-lg bg-white/[0.03] border border-white/10 px-3.5 py-2.5 text-sm text-ink placeholder:text-ink-faint outline-none focus:border-primary/60 transition-colors"
-                    />
-                  </div>
-                  <div>
-                    <label htmlFor="topic" className="block text-xs font-medium text-ink-muted mb-1.5">
-                      Topic
-                    </label>
-                    <input
-                      id="topic"
-                      name="topic"
-                      value={form.topic}
-                      onChange={onChange}
-                      placeholder="e.g. Memory Management"
-                      className="w-full rounded-lg bg-white/[0.03] border border-white/10 px-3.5 py-2.5 text-sm text-ink placeholder:text-ink-faint outline-none focus:border-primary/60 transition-colors"
-                    />
-                  </div>
-                </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label htmlFor="unit" className="block text-xs font-medium text-ink-muted mb-1.5">
+                          Unit
+                        </label>
+                        <input
+                          id="unit"
+                          name="unit"
+                          value={form.unit}
+                          onChange={onChange}
+                          placeholder="e.g. Unit 3"
+                          className="w-full rounded-lg bg-white/[0.03] border border-white/10 px-3.5 py-2.5 text-sm text-ink placeholder:text-ink-faint outline-none focus:border-primary/60 transition-colors"
+                        />
+                      </div>
+                      <div>
+                        <label htmlFor="topic" className="block text-xs font-medium text-ink-muted mb-1.5">
+                          Topic
+                        </label>
+                        <input
+                          id="topic"
+                          name="topic"
+                          value={form.topic}
+                          onChange={onChange}
+                          placeholder="e.g. Memory Management"
+                          className="w-full rounded-lg bg-white/[0.03] border border-white/10 px-3.5 py-2.5 text-sm text-ink placeholder:text-ink-faint outline-none focus:border-primary/60 transition-colors"
+                        />
+                      </div>
+                    </div>
+                  </>
+                )}
 
                 <div>
                   <label htmlFor="tags" className="block text-xs font-medium text-ink-muted mb-1.5">
@@ -460,7 +491,15 @@ export default function UploadModal({ open, onClose, onSuccess, initialValues })
                   >
                     {status === 'uploading' && <Loader2 size={15} className="animate-spin" />}
                     {status === 'done' && <CheckCircle2 size={15} />}
-                    {status === 'uploading' ? 'Uploading' : status === 'done' ? 'Uploaded' : 'Upload'}
+                    {status === 'uploading'
+                      ? 'Uploading'
+                      : status === 'done'
+                        ? isCareer
+                          ? 'Submitted'
+                          : 'Uploaded'
+                        : isCareer
+                          ? 'Submit for Review'
+                          : 'Upload'}
                   </button>
                 </div>
               </form>
