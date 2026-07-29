@@ -15,6 +15,7 @@ export default function sanitizeUser(user) {
     semester: user.semester,
     profileCompleted: user.profileCompleted,
     role: user.role,
+    canUploadCareer: user.canUploadCareer,
     monthlyUploadCount: user.monthlyUploadCount,
     monthlyUploadLimit: MAX_MONTHLY_UPLOADS,
     dailyCredits: user.dailyCredits,

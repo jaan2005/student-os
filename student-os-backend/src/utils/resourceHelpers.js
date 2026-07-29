@@ -28,6 +28,9 @@ export function sanitizeResource(resource, bookmarkedIds = new Set()) {
 
   return {
     id: resource._id,
+    category: resource.category,
+    college: resource.college,
+    approvalStatus: resource.approvalStatus,
     title: resource.title,
     description: resource.description,
     semester: resource.semester,

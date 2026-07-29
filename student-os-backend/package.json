@@ -7,7 +7,8 @@
     "dev": "nodemon server.js",
     "start": "node server.js",
     "promote-admin": "node scripts/promoteAdmin.js",
-    "backfill-ai": "node scripts/backfillAIContent.js"
+    "backfill-ai": "node scripts/backfillAIContent.js",
+    "backfill-college": "node scripts/backfillCollegeAndCategory.js"
   },
   "dependencies": {
     "@google/generative-ai": "^0.21.0",

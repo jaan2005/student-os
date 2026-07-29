@@ -23,6 +23,10 @@ export const AI_CREDIT_COSTS = {
   explain: 1,
   summarize: 1,
   quiz: 1,
+  // Charged per message, not per conversation — see aiController.js. A
+  // conversation of N messages costs N credits, same as clicking
+  // Explain/Summarize/Quiz N separate times would.
+  assistant: 1,
 }
 
 export const AI_LIMIT_REACHED_MESSAGE =
@@ -40,11 +44,45 @@ const parsedRateWindow = parseInt(process.env.AI_RATE_LIMIT_WINDOW_MINUTES, 10)
 export const AI_RATE_LIMIT_WINDOW_MINUTES =
   Number.isFinite(parsedRateWindow) && parsedRateWindow > 0 ? parsedRateWindow : 1
 
+// The Assistant is a genuine back-and-forth (send, read, reply, read,
+// reply...) — a normal study session can plausibly hit the one-shot
+// Explain/Summarize/Quiz rate limit (8/min) without any abuse involved.
+// Given its own, higher ceiling on the same underlying limiter rather than
+// sharing aiRateLimiter as-is.
+const parsedAssistantRateMax = parseInt(process.env.AI_ASSISTANT_RATE_LIMIT_MAX, 10)
+export const AI_ASSISTANT_RATE_LIMIT_MAX =
+  Number.isFinite(parsedAssistantRateMax) && parsedAssistantRateMax > 0 ? parsedAssistantRateMax : 20
+
+const parsedAssistantRateWindow = parseInt(process.env.AI_ASSISTANT_RATE_LIMIT_WINDOW_MINUTES, 10)
+export const AI_ASSISTANT_RATE_LIMIT_WINDOW_MINUTES =
+  Number.isFinite(parsedAssistantRateWindow) && parsedAssistantRateWindow > 0 ? parsedAssistantRateWindow : 1
+
 // Caps how much text can be pasted into AI Explain — bounds the cost of a
 // single request regardless of credit accounting.
 const parsedExplainMax = parseInt(process.env.MAX_EXPLAIN_INPUT_CHARS, 10)
 export const MAX_EXPLAIN_INPUT_CHARS =
   Number.isFinite(parsedExplainMax) && parsedExplainMax > 0 ? parsedExplainMax : 8000
+
+// AI Study Assistant: every message re-sends the document context plus the
+// running conversation so far, so both need a hard cap or a long session
+// against a long PDF eventually gets slow, expensive, or exceeds the
+// model's context window. History is capped by message *count* (only the
+// most recent N are sent, though all are stored and shown in the UI);
+// document context is capped by *character count* (same idea as
+// MAX_EXPLAIN_INPUT_CHARS, applied to the extracted PDF text instead).
+const parsedAssistantHistory = parseInt(process.env.AI_ASSISTANT_HISTORY_LIMIT, 10)
+export const AI_ASSISTANT_HISTORY_LIMIT =
+  Number.isFinite(parsedAssistantHistory) && parsedAssistantHistory > 0 ? parsedAssistantHistory : 10
+
+const parsedAssistantContext = parseInt(process.env.AI_ASSISTANT_CONTEXT_CHAR_LIMIT, 10)
+export const AI_ASSISTANT_CONTEXT_CHAR_LIMIT =
+  Number.isFinite(parsedAssistantContext) && parsedAssistantContext > 0 ? parsedAssistantContext : 60_000
+
+// Hard cap on a single message's length — same purpose as
+// MAX_EXPLAIN_INPUT_CHARS, applied to what a student types into the Assistant.
+const parsedAssistantMessage = parseInt(process.env.MAX_ASSISTANT_MESSAGE_CHARS, 10)
+export const MAX_ASSISTANT_MESSAGE_CHARS =
+  Number.isFinite(parsedAssistantMessage) && parsedAssistantMessage > 0 ? parsedAssistantMessage : 4000
 
 // How many AI pre-generation jobs (triggered right after a PDF upload) run
 // concurrently in this process. See utils/taskQueue.js.
@@ -52,10 +90,31 @@ const parsedPregenConcurrency = parseInt(process.env.AI_PREGEN_CONCURRENCY, 10)
 export const AI_PREGEN_CONCURRENCY =
   Number.isFinite(parsedPregenConcurrency) && parsedPregenConcurrency > 0 ? parsedPregenConcurrency : 2
 
-// V1: single college. When onboarding another college later, add it here —
-// must stay in sync with COLLEGES in the frontend's src/constants/colleges.js.
-// Validated server-side (not just via the frontend dropdown) so a direct API
-// request can't set an arbitrary, unrecognized college.
-//
-// TODO: replace with your actual college name before launch.
-export const ALLOWED_COLLEGES = ['M.H. Saboo Siddik College of Engineering']
+// V2: multi-college. Every college a student can select in Profile Setup
+// must be listed here — validated server-side (not just via the frontend
+// dropdown) so a direct API request can't set an arbitrary, unrecognized
+// college. Must stay in sync with COLLEGES in the frontend's
+// src/constants/colleges.js. Academic resources are scoped to the
+// uploader's/viewer's college; Career Resources are not (see RESOURCE_CATEGORIES).
+export const ALLOWED_COLLEGES = [
+  'M.H. Saboo Siddik College of Engineering',
+  "Vivekanand Education Society's College of Pharmacy",
+]
+
+// Two resource categories:
+// - 'academic'  : Notes & Resources, scoped per-college (unchanged V1 behavior)
+// - 'career'    : Career Resources, visible to every student regardless of
+//                 college, but every upload starts 'pending' and only
+//                 becomes visible once an admin approves it.
+export const RESOURCE_CATEGORIES = {
+  ACADEMIC: 'academic',
+  CAREER: 'career',
+}
+export const ALL_RESOURCE_CATEGORIES = Object.values(RESOURCE_CATEGORIES)
+
+export const APPROVAL_STATUS = {
+  APPROVED: 'approved',
+  PENDING: 'pending',
+  REJECTED: 'rejected',
+}
+export const ALL_APPROVAL_STATUSES = Object.values(APPROVAL_STATUS)

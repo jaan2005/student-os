@@ -30,6 +30,14 @@ const userSchema = new mongoose.Schema(
 
     role: { type: String, enum: ALL_ROLES, default: ROLES.STUDENT, index: true },
 
+    // Separate from `role`. Career Resources is a smaller, hand-picked
+    // trust circle than academic trustedContributors — grantable to any
+    // user (student or trustedContributor) by an admin, independent of
+    // their academic upload permissions. Admins can always upload Career
+    // Resources regardless of this flag (see UPLOAD_ROLES/authorizeRoles
+    // usage in resourceRoutes.js).
+    canUploadCareer: { type: Boolean, default: false },
+
     // Resets to 0 whenever uploadResetDate falls in a previous calendar
     // month — see utils/monthlyUploads.js. Duplicate uploads (same
     // fileHash) never increment this.
