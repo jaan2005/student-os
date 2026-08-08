@@ -101,6 +101,7 @@ export const ALLOWED_COLLEGES = [
   "Vivekanand Education Society's College of Pharmacy",
   "M.H SABOO SIDDIK POLYTECHNIC",
   "Ramniranjan Jhunjhunwala College of Arts, Science & Commerce",
+  "St. Xavier's college",
 ]
 
 // Two resource categories:
